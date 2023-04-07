@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1680853264 source:c:\users\bianc\desktop\c++\proiect- magazin online\main.cpp
+	<iostream>
+	<vector>
+	<cstring>
+
