@@ -4,3 +4,11 @@
 	<vector>
 	<cstring>
 
+1682853368 source:c:\users\bianc\desktop\c++\proiectpoo\main.cpp
+	<iostream>
+	<vector>
+	<cstring>
+	<exception>
+	<limits>
+	<stdlib.h>
+
