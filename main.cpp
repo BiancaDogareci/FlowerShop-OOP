@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <memory>
 #include <cstring>
 #include <exception>
 #include <limits>
 #include <stdlib.h>
+#include <algorithm>
+#include <random>
 using namespace std;
 
 class Product {
@@ -96,71 +99,32 @@ istream& operator >> (istream& in, Customer& c)
 
 class ShoppingCart {
 private:
-	Product** v_product_code;
-	size_t size_vpc;
-	double* v_prices;
-	size_t size_vp;
-	Customer customer;
+	vector<unique_ptr<Product>> v_product_code;
+    vector<double> v_prices;
+    Customer customer;
 public:
-	ShoppingCart() : customer()
-	{
-		size_vpc = 0;
-		size_vp = 0;
-		v_product_code = NULL;
-		v_prices = NULL;
-	}
-	void add_to_cart(double price, Product* product) {
-		if (v_product_code != NULL) {
-			Product** vec;
-			vec = new Product*[size_vpc + 1];
-			for (int i = 0; i < size_vpc; i++)
-			{
-				vec[i] = v_product_code[i];
-			}
-			vec[size_vpc] = product;
-			size_vpc++;
-			delete[] v_product_code;
-			v_product_code = vec;
-		}
-		else {
-			size_vpc++;
-			v_product_code = new Product*[size_vpc];
-			v_product_code[size_vpc - 1] = product;
-		}
+	ShoppingCart() : customer() {}
 
-		if (v_prices != NULL) {
-			double* vec2;
-			vec2 = new double[size_vp + 1];
-			for (int i = 0; i < size_vp; i++) {
-				vec2[i] = v_prices[i];
-			}
-			vec2[size_vp] = price;
-			size_vp++;
-			delete[] v_prices;
-			v_prices = vec2;
-		}
-		else {
-			size_vp++;
-			v_prices = new double[size_vp];
-			v_prices[size_vp - 1] = price;
-		}
-	}
+	void add_to_cart(double price, unique_ptr<Product> product) {
+        v_product_code.push_back(move(product));
+        v_prices.push_back(price);
+    }
 
 	double show_cart() {
-		cout << endl;
+        cout << endl;
         cout << "***************************************************************************************" << endl;
-		cout << "Cosul dumneavoastra de cumparaturi:" << endl << endl;
+        cout << "Cosul dumneavoastra de cumparaturi:" << endl << endl;
 
-		double total_price = 0;
-		for (int i = 0; i < size_vp; i++) {
-			total_price = total_price + v_prices[i];
-			cout << "Produs: " << v_product_code[i]->name << endl;
-			cout << "Pret: " << v_prices[i] << " lei" << endl;
-		}
-		cout << endl;
-		cout << "Pretul total este: " << total_price << " lei" << endl;
-		return total_price;
-	}
+        double total_price = 0;
+        for (size_t i = 0; i < v_prices.size(); i++) {
+            total_price += v_prices[i];
+            cout << "Produs: " << v_product_code[i]->name << endl;
+            cout << "Pret: " << v_prices[i] << " lei" << endl;
+        }
+        cout << endl;
+        cout << "Pretul total este: " << total_price << " lei" << endl;
+        return total_price;
+    }
 
 	void add_customer_info(char* Last_name, char* First_name, char* Email) {
 		strcpy(customer.last_name, Last_name);
@@ -173,16 +137,10 @@ public:
 		cout << "Email-ul introdus: " << customer.email << endl;
 	}
 
-	static void sale(double total_price) {
-		cout << "Reducere 10% de Valentine's Day!" << endl;
-		cout << "Noul total: " << endl << total_price - total_price / 10 << " lei";
-	}
-	~ShoppingCart(){
-		if(v_prices!=NULL)
-			delete[] v_prices;
-		if(v_product_code!=NULL)
-			delete[] v_product_code;
-	}
+    static void sale(double total_price) {
+        cout << "Reducere 10% de Valentine's Day!" << endl;
+        cout << "Noul total: " << endl << total_price - total_price / 10 << " lei";
+    }
 	friend class Order;
 };
 
@@ -305,44 +263,53 @@ public:
 
 };
 
-class feedback {
+template<typename T>
+class Feedback {
 private:
-	size_t size;
-	int* data;
+    size_t size;
+    T* data;
+
 public:
-	feedback() {
-		data = NULL;
-		size = 0;
-	}
-	feedback(int x) {
-		size = 1;
-		data = new int[size];
-		for (int i = 0; i < size; i++)
-			data[i] = x;
-	}
+    Feedback() {
+        data = nullptr;
+        size = 0;
+    }
 
-	feedback(const feedback& x) {
-		size = x.size;
-		data = new int[size];
-		for (int i = 0; i < size; i++)
-			data[i] = x.data[i];
-	}
+    Feedback(const T& value) {
+        size = 1;
+        data = new T[size];
+        for (int i = 0; i < size; i++)
+            data[i] = value;
+    }
 
-	void operator=(const feedback& x) {
-		if (data != NULL)
-			delete[] data;
-		size = x.size;
-		data = new int[size];
-		for (int i = 0; i < size; i++)
-			data[i] = x.data[i];
-	}
+    Feedback(const Feedback& other) {
+        size = other.size;
+        data = new T[size];
+        for (int i = 0; i < size; i++)
+            data[i] = other.data[i];
+    }
 
-	~feedback() {
-		if (data != NULL)
-			delete[] data;
-	}
+    void operator=(const Feedback& other) {
+        if (data != nullptr)
+            delete[] data;
+        size = other.size;
+        data = new T[size];
+        for (int i = 0; i < size; i++)
+            data[i] = other.data[i];
+    }
+
+    template<typename U>
+    void showFeedback(const Feedback<U>& feedback) const {
+        cout << "Feedback: " << feedback.data[0] << endl;
+    }
+
+    ~Feedback() {
+        if (data != nullptr)
+            delete[] data;
+    }
 
 };
+
 
 class Bouquet {
 public:
@@ -500,14 +467,35 @@ class Founder_1 : public Founders {
 private:
     string name;
     int years_of_experience;
-public:
+    static Founder_1* instance; // Static instance variable
+
+    // Private constructor to prevent direct instantiation
     Founder_1(string n, int y) : name(n), years_of_experience(y) {}
-    void show_name() override { cout<<"    1. "<<name<<endl; }
-    void story() override{
-        cout<<endl<<"\"Am iubit florile de cand eram inca un copil. Imi amintesc de zilele de vara in care admiram florile din gradina bunicii si invatam cum sa le ingrijesc. Aceasta florarie a fost un vis al meu inca de atunci.\""<<endl;
+
+public:
+    static Founder_1* getInstance(string n, int y) {
+        if (instance == nullptr) {
+            instance = new Founder_1(n, y);
+        }
+        return instance;
     }
 
+    void show_name() override { cout << "    1. " << name << endl; }
+    void story() override {
+        cout << endl
+             << "\"Am iubit florile de cand eram inca un copil. Imi amintesc de zilele de vara in care admiram florile din gradina bunicii si invatam cum sa le ingrijesc. Aceasta florarie a fost un vis al meu inca de atunci.\""
+             << endl;
+    }
+
+    static void destroyInstance() {
+        if (instance != nullptr) {
+            delete instance;
+            instance = nullptr;
+        }
+    }
 };
+
+Founder_1* Founder_1::instance = nullptr;
 
 class Founder_2 : public Founders {
 private:
@@ -668,7 +656,8 @@ int main()
                         if (code == produse[i].get_code()) {
                             price = produse[i].product_price();
                             price = price * nr_of_flowers;
-                            cart.add_to_cart(price, &produse[i]);
+                            unique_ptr<Product> productPtr = make_unique<Product>(produse[i]);
+                            cart.add_to_cart(price, move(productPtr));
                         }
                     }
                     cout << "S-a adaugat cu succes!" << endl;
@@ -770,15 +759,59 @@ int main()
                     cout << endl << "Dati o nota la interactiunea cu floraria: " << endl;
                     int nota;
                     cin >> nota;
-                    feedback program(nota);
+                    Feedback<int> program(nota);
+
+                    vector<int> note_pt_feedback;
+                    note_pt_feedback.push_back(nota);
+
                     cout << "Vreti sa dati aceeasi nota pentru varietatea produselor si pentru preturi?(da/nu)" << endl;
                     char answer5[5];
                     cin >> answer5;
                     if (strcmp(answer5, "da\0") == 0) {
-                        feedback products;
+                        Feedback<int> products;
                         products = program;
-                        feedback prices;
+                        Feedback<int> prices;
+                        prices=program;
+
+                        cout<<endl<<"Note introduse: "<<endl;
+                        program.showFeedback(program);
+                        products.showFeedback(products);
+                        prices.showFeedback(prices);
+                        cout<<endl<<"Multumim pentru feedback!"<<endl<<endl;
                     }
+                    else if(strcmp(answer5, "nu\0") == 0){
+                        int nota;
+                        cout << endl << "Dati o nota pentru varietatea produselor: " << endl;
+                        cin >> nota;
+                        note_pt_feedback.push_back(nota);
+
+                        cout << endl << "Dati o nota pentru preturi: " << endl;
+                        cin >> nota;
+                        note_pt_feedback.push_back(nota);
+
+                        sort(note_pt_feedback.begin(), note_pt_feedback.end());
+
+                        cout<<"Notele introduse ordonate: "<<endl;
+                        for (auto it = note_pt_feedback.begin(); it != note_pt_feedback.end(); ++it) {
+                            cout << *it << " ";
+                        }
+                        cout << endl;
+
+                    }
+
+                    cout << "Vreti sa si scrieti un feedback pe langa notele date?(da/nu)" << endl;
+                    cin >> answer5;
+                    if (strcmp(answer5, "da\0") == 0){
+                        cin.ignore();
+                        string feedback;
+                        cout << "Introduceti feedback-ul: ";
+                        getline(cin,feedback);
+                        Feedback<string> ftext(feedback);
+
+                        cout<<endl<<"Multumim pentru feedback!"<<endl;
+                        ftext.showFeedback(ftext);
+                    }
+
                     cout << "Multumim ca ati cumparat de la noi!" << endl;
                     return 0;
                 }
@@ -797,7 +830,7 @@ int main()
         char answer6[5];
 
         vector<Founders*> founders;
-        founders.push_back(new Founder_1("Elvira Angelica", 20));
+        founders.push_back(Founder_1::getInstance("Elvira Angelica", 20));
         founders.push_back(new Founder_2("Anastasia Florescu", 5));
         founders.push_back(new Founder_3("Otilia Radu", 18));
         founders.push_back(new Founder_4("Stefan Lazar", 4));
@@ -817,20 +850,24 @@ int main()
             cout<<endl;
             if(code==1){
                 system("cls");
+
                 Spring_Bouquet spring(150.0,5,5,5,6,"","");
                 spring.set_wrapping_color(wrapping_color);
                 spring.set_wrapping_pattern(wrapping_pattern);
                 print_bouquet_details(spring);
+
                 cout << "***************************************************************************************" << endl<<endl;
                 show_wrapping_details(spring);
                 cout << "***************************************************************************************" << endl<<endl;
             }
             else if(code==2){
                 system("cls");
+
                 Summer_Bouquet summer(200.0,4,5,5,4,5,"","");
                 summer.set_wrapping_color(wrapping_color);
                 summer.set_wrapping_pattern(wrapping_pattern);
                 print_bouquet_details(summer);
+
                 cout << "***************************************************************************************" << endl<<endl;
                 show_wrapping_details(summer);
                 cout << "***************************************************************************************" << endl<<endl;
@@ -871,8 +908,21 @@ int main()
         cout<<endl<<"De unde a venit pasiunea fiecaruia pentru flori?"<<endl;
         int e=1;
         while(e!=0){
-            cout<<endl<<"     Alege codul unuia dintre ei pentru a afla sau 0 pentru a da skip: ";
-            cin>>e;
+            cout<<endl<<"     Alege cod sau random? (alege/random) "<<endl;
+            char answer7[10];
+            cin >> answer7;
+            if(strcmp(answer7,"random\0")==0){
+                random_device rd;
+                mt19937 gen(rd());
+                uniform_int_distribution<int> dist(1, 4);
+                int randomNumber = dist(gen);
+                e=randomNumber;
+            }
+            else{
+                cout<<endl<<"     Alege codul unuia dintre ei pentru a afla sau 0 pentru a da skip: ";
+                cin>>e;
+            }
+
             while(e<0 || e>4){
                 cout<<endl<<"    Cod gresit! Introduceti altul: ";
                 cin>>e;
