@@ -17,5 +17,10 @@
 * when the order is placed, the total payment is calculated with a discount applied using the static function "sale", and the customer must enter certain information: name, surname, email, card details (optional), country, city, street, number
 * in the end, feedback is requested regarding the services provided
 
+## Demo:
+https://github.com/BiancaDogareci/FlowerShop_OOP/assets/119197457/2791bf74-02cb-4aad-b1a4-0f16517b9db7
+#
+https://github.com/BiancaDogareci/FlowerShop_OOP/assets/119197457/ffbe8831-c244-4655-8064-9c879fac8321
+
 #
 #### Dogareci Bianca-Alexandra
